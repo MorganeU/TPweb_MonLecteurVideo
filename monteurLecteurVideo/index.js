@@ -22,20 +22,20 @@ template.innerHTML = /*html*/`
 <button id="ecran" onclick="pleinEcran()">Mettre en plein écran</button>
 <button id="precedente" onclick="changerVideo()">Vidéo precedente</button>
 <button id="suivante" onclick="changerVideo()">Vidéo suivante</button>
-
-<webaudio-knob diameter=40 id="volume" min=0 max=1 value=0.5 step="0.1" tooltip="%s" src="./assets/SimpleFlat3.png"></webaudio-knob>
-<webaudio-param></webaudio-param>
-<webaudio-slider></webaudio-slider>
-<webaudio-switch></webaudio-switch>
-<webaudio-keyboard></webaudio-keyboard>
+<webaudio-slider tracking="rel" id="volume" min=0 max=1 value=0.5 step="0.1"></webaudio-slider>
 `;
+// <webaudio-knob diameter=50 id="volume" min=0 max=1 value=0.5 step="0.1" tooltip="%s" src="./assets/SimpleFlat3.png"></webaudio-knob>
+// <webaudio-knob diameter=40 id="volume" min=0 max=1 value=0.5 step="0.1" tooltip="%s" src="./assets/SimpleFlat3.png"></webaudio-knob>
+// <webaudio-param></webaudio-param>
+// <webaudio-switch></webaudio-switch>
+// <webaudio-keyboard></webaudio-keyboard>
 
 class MyVideoPlayer extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
   }
-  
+
   connectedCallback() {
     // appelé avant affichage du composant
     this.shadowRoot.appendChild(template.content.cloneNode(true)); // appel au template
@@ -81,28 +81,23 @@ class MyVideoPlayer extends HTMLElement {
       "https://file-examples-com.github.io/uploads/2017/04/file_example_MP4_480_1_5MG.mp4",
       "https://samplelib.com/lib/preview/mp4/sample-5s.mp4"
     ];
-    let cpt = 0;
-    console.log(videos.length)
-    this.shadowRoot.querySelector("#suivante").onclick = () => {
-      cpt += 1;
-      if (cpt > videos.length-1) { cpt = 0 }
-      this.player.src = videos[cpt];
-      console.log(cpt + " " + videos[cpt]);
+    this.cpt = 0;
+    this.shadowRoot.querySelector("#suivante").onclick = () => { // passer à la suivante
+      this.videoSuivante(videos)
     }
-    this.shadowRoot.querySelector("#precedente").onclick = () => {
-      cpt -= 1;
-      if (cpt < 0) { cpt = videos.length-1 }
-      this.player.src = videos[cpt];
-      console.log(cpt + " " + videos[cpt]);
+    this.shadowRoot.querySelector("#precedente").onclick = () => { // passer à la precedente
+      this.videoPrecedente(videos)
+    }
+    this.player.onended = () => { // passer à la suivante quand la video est fini
+      this.videoSuivante(videos);
+      this.player.play();
     }
     // Augmenter et baisser le volume
     this.shadowRoot.querySelector("#volume").oninput = (event) => {
-      console.log(event.target.value);
       const vol = parseFloat(event.target.value);
       this.player.volume = vol;
     }
   }
-  // this.player.ended
 
   fixRelativeURLS() {
     // pour les knobs
@@ -113,24 +108,18 @@ class MyVideoPlayer extends HTMLElement {
     });
   }
 
+  videoSuivante(videos) {
+    this.cpt++;
+    if (this.cpt > videos.length - 1) { this.cpt = 0 }
+    this.player.src = videos[this.cpt];
+  }
 
-  // API
-  // play() {
-  //   player.play();
-  // }
-  // pause() {
-  //   player.pause();
-  // }
-  // avance10s() {
-  //   player.currentTime += 10;
-  // }
-  // vitesse4x() {
-  //   player.playbackRate = 4;
-  // }
-  // getInfo() {
-  //   console.log("Durée de la vidéo : " + player.duration);
-  //   console.log("Temps courant : " + player.currentTime);
-  // }
+  videoPrecedente(videos){
+    this.cpt--;
+      if (this.cpt < 0) { this.cpt = videos.length - 1 }
+      this.player.src = videos[this.cpt];
+  }
+
 }
 
 customElements.define("my-player", MyVideoPlayer);

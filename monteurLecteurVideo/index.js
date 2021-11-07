@@ -30,12 +30,16 @@ template.innerHTML = /*html*/`
   width: fit-content;
   position: relative;
   margin: 25px;
+  color:white;
+  font-family: Arial;
 }
 #over:hover > #barre {
   opacity:1;
 }
-#ecran {
+#sec{
   margin-left:auto;
+}
+#ecran {
   margin-right: 5px;
 }
 #infos {
@@ -51,34 +55,57 @@ button {
   padding: 0 8px;
   cursor: pointer;
   color:white;
-  font-weight:bold;
-  font-family: Arial;
   font-size:20px;
 }
-#play{
+#play > i{
   font-size:18px;
+  padding:0 1px;
 }
 #vol {
   font-size:25px;
   margin-left:5px;
   width:30px;
 }
+#temps{
+  padding-left:20px;
+}
+#avancement{
+  position:absolute;
+  bottom:35px;
+  width:100%;
+  height:5px;
+  background-color:white;
+  opacity:0;
+  cursor: pointer;
+  transition: opacity cubic-bezier(0.4, 0, 1, 1) .3s;
+}
+#avancement > div{
+  height:5px;
+  width:0;
+  background-color:blue;
+}
+#over:hover > #avancement {
+  opacity:1;
+}
 </style>
 
 <div id="over">
   <video id="player"><br></video>
   <div id="barre">
-    <button id="precedente" onclick="changerVideo()"><i class="fas fa-step-backward"></i></button>
-    <button id="play" onclick="play()"><i class="fas fa-play"></i></button>
-    <button id="pause" onclick="pause()"><i class="fas fa-pause"></i></button>
-    <button id="suivante" onclick="changerVideo()"><i class="fas fa-step-forward"></i></button>
+    <button id="precedente"><i class="fas fa-step-backward"></i></button>
+    <button id="play"><i class="fas fa-play"></i></button>
+    <button id="suivante"><i class="fas fa-step-forward"></i></button>
     <i id="vol" class="fas fa-volume-up"></i>
     <webaudio-slider id="volume" height=17 width=70 tracking="rel" min=0 max=1 value=0.85 step="0.1"></webaudio-slider>
-    <button id="sec" onclick="avance10s()">+10s</button>
-    <button id="vite" onclick="vitesse4x()">x4</button>
-    <button id="ecran" onclick="pleinEcran()"><i class="fas fa-expand"></i></button>
+    <div id="temps">0:00 / 0:00</div>
+    <button id="sec">+10s</button>
+    <button id="vite">x1</button>
+    <button id="ecran"><i class="fas fa-expand"></i></button>
   </div>
-  <button id="infos" onclick="getInfo()"><i class="fas fa-info-circle"></i></button> 
+  <button id="infos"><i class="fas fa-info-circle"></i></button> 
+  <div id="avancement">
+    <div></div>
+  </div>
 </div>
 `;
 // <webaudio-knob diameter=50 id="volume" min=0 max=1 value=0.5 step="0.1" tooltip="%s" src="./assets/SimpleFlat3.png"></webaudio-knob>
@@ -110,21 +137,34 @@ class MyVideoPlayer extends HTMLElement {
 
   // Pour jouer avec la video 
   definitEcouteurs() {
-    // Lancer la vidéo
+    // Lecture vidéo
     this.shadowRoot.querySelector("#play").onclick = () => {
-      this.player.play();
-    }
-    // Arreter la vidéo
-    this.shadowRoot.querySelector("#pause").onclick = () => {
-      this.player.pause();
+      let icon = this.shadowRoot.querySelector("#play > i");
+      // Lancer la vidéo
+      if (this.player.paused) {
+        this.player.play();
+        icon.className = 'fas fa-pause';
+        icon.style.fontSize = 20 + 'px';
+        icon.style.padding = '0px';
+      }
+      // Arreter la vidéo
+      else {
+        this.player.pause();
+        icon.className = 'fas fa-play';
+        icon.style.fontSize = 18 + 'px';
+        icon.style.padding = '0 1px';
+      }
     }
     // Avancer de 10 sec la vidéo
     this.shadowRoot.querySelector("#sec").onclick = () => {
       this.player.currentTime += 10;
     }
     // Mettre la vidéo en vitesse x4
-    this.shadowRoot.querySelector("#vite").onclick = () => {
-      this.player.playbackRate = 4;
+    this.shadowRoot.querySelector("#vite").onclick = (e) => {
+      if (this.player.playbackRate == 1) this.player.playbackRate = 2;
+      else if (this.player.playbackRate == 2) this.player.playbackRate = 4;
+      else if (this.player.playbackRate == 4) this.player.playbackRate = 1;
+      e.currentTarget.innerHTML = 'x' + this.player.playbackRate;
     }
     // Obtenir dans la console des informations sur la vidéo
     this.shadowRoot.querySelector("#infos").onclick = () => {
@@ -150,6 +190,10 @@ class MyVideoPlayer extends HTMLElement {
     this.player.onended = () => { // passer à la suivante quand la video est fini
       this.videoSuivante(videos);
       this.player.play();
+      let icon = this.shadowRoot.querySelector("#play > i");
+      icon.className = 'fas fa-pause';
+      icon.style.fontSize = 20 + 'px';
+      icon.style.padding = '0px';
     }
     // Augmenter et baisser le volume
     this.shadowRoot.querySelector("#volume").oninput = (event) => {
@@ -157,13 +201,27 @@ class MyVideoPlayer extends HTMLElement {
       this.player.volume = vol;
       let icon = this.shadowRoot.querySelector("#vol");
       let iconName;
-      if(vol==0) iconName='fas fa-volume-off'
-      else if(vol<0.8) iconName='fas fa-volume-down'
-      else iconName='fas fa-volume-up'
+      if (vol == 0) iconName = 'fas fa-volume-off'
+      else if (vol < 0.8) iconName = 'fas fa-volume-down'
+      else iconName = 'fas fa-volume-up'
       icon.className = iconName
     }
+    // Avancement vidéo
+    this.player.ontimeupdate = () => {
+      // affichage du temps
+      this.shadowRoot.querySelector("#temps").innerHTML = this.formatTime(this.player.currentTime) + ' / ' + this.formatTime(this.player.duration);
+      // barre d'avancement
+      this.shadowRoot.querySelector("#avancement > div").style.width = this.player.currentTime / this.player.duration * 100 + '%';
+    };
+
+    const barreAvancement = this.shadowRoot.querySelector("#avancement")
+    barreAvancement.onclick = (e) => {
+      const x = e.clientX - 30
+      const width = barreAvancement.getBoundingClientRect().width
+      this.player.currentTime = this.player.duration * (x /width)
+    }
   }
- 
+
   fixRelativeURLS() {
     // pour les knobs
     let knobs = this.shadowRoot.querySelectorAll('webaudio-knob');
@@ -177,19 +235,40 @@ class MyVideoPlayer extends HTMLElement {
     this.cpt++;
     if (this.cpt > videos.length - 1) { this.cpt = 0 }
     this.player.src = videos[this.cpt];
+    let icon = this.shadowRoot.querySelector("#play > i");
+    icon.className = 'fas fa-play';
+    icon.style.fontSize = 18 + 'px';
+    icon.style.padding = '0 1px';
+    this.shadowRoot.querySelector("#avancement > div").style.width = '0%';
   }
 
   videoPrecedente(videos) {
     this.cpt--;
     if (this.cpt < 0) { this.cpt = videos.length - 1 }
     this.player.src = videos[this.cpt];
+    let icon = this.shadowRoot.querySelector("#play > i");
+    icon.className = 'fas fa-play';
+    icon.style.fontSize = 18 + 'px';
+    icon.style.padding = '0 1px';
+    this.shadowRoot.querySelector("#avancement > div").style.width = '0%';
   }
-
+  
   dimensionVideo(v) {
     v.addEventListener("loadedmetadata", () => {
       const barre = this.shadowRoot.querySelector('#barre')
       barre.style.width = v.getBoundingClientRect().width + 'px'
     }, false);
+  }
+
+  formatTime(time) {
+    if (isNaN(time)) {
+      return '00:00';
+    }
+    let minutes = Math.floor(time / 60);
+    let seconds = Math.floor(time - minutes * 60);
+    if (minutes < 10) minutes = '0' + minutes;
+    if (seconds < 10) seconds = '0' + seconds;
+    return minutes + ":" + seconds;
   }
 }
 

@@ -99,6 +99,26 @@ template.innerHTML = /*html*/`
   #nvlleVideo{
     margin: 25px;
     font-family: Arial;
+    position:absolute;
+    display: flex;
+    align-items: center;
+    margin-top:0px;
+  }
+  #form{
+    position:relative;
+    top:8px;
+    left:7px;
+  }
+  #liste{
+    position:relative;
+    cursor: pointer;
+  }
+  #listeVideos{
+    font-family: Arial;
+    position:absolute;
+    bottom:400px;
+    right:100px;
+    padding:5px;
   }
 </style>
 
@@ -122,12 +142,15 @@ template.innerHTML = /*html*/`
 </div>
 <div id="nvlleVideo">
   <p>Ajouter le lien d'une vidéo (.mp4) : </p>
-  <form>
+  <form id="form">
     <input id="input" type="text"></input>
     <input id="ajout" type="button" value="OK"></input>
   </form>
 </div>
-<div id="liste"></div>
+<div id="listeVideos">
+  <p>Autres videos : </p>
+  <div id="liste"></div>
+</div>
 `;
 // <webaudio-knob diameter=50 id="volume" min=0 max=1 value=0.5 step="0.1" tooltip="%s" src="./assets/SimpleFlat3.png"></webaudio-knob>
 // <webaudio-knob diameter=40 id="volume" min=0 max=1 value=0.5 step="0.1" tooltip="%s" src="./assets/SimpleFlat3.png"></webaudio-knob>
@@ -259,8 +282,16 @@ class MyVideoPlayer extends HTMLElement {
     }
 
     // Liste des autres videos (ne fonctionne pas)
-    // this.autresVideos();
-
+    let num = this.autresVideos();
+    console.log(num)
+    console.log(this.shadowRoot.querySelector("#autreVideo1"))
+    for (let i = 0; i < num.length; i++) {
+      console.log(num[i])
+      this.shadowRoot.querySelector("#autreVideo" + num[i]).onclick = () => {
+        this.player.src = this.video[num];
+        console.log("click")
+      }
+    }
   }
 
   fixRelativeURLS() {
@@ -313,12 +344,17 @@ class MyVideoPlayer extends HTMLElement {
   }
 
   autresVideos() {
+    let vid = [];
     for (let i = 0; i < this.videos.length; i++) {
       if (this.player.src != this.videos[i]) {
-        this.shadowRoot.querySelector("#liste").innerHTML = '<video src=' + this.videos[i] + '></video>';
-        console.log(this.shadowRoot.querySelector("#liste").innerHTML)
+        this.shadowRoot.querySelector("#liste").innerHTML += '<video id=autreVideo' + i + ' src="' + this.videos[i] + '"></video>';
+        this.shadowRoot.querySelector("#autreVideo" + i).style.width = 200 + 'px';
+        // this.shadowRoot.querySelector("#autreVideo"+i).style.heigth=50+'px';
+        this.shadowRoot.querySelector("#autreVideo" + i).style.marginBottom = 8 + 'px';
+        vid.push(i);
       }
     }
+    return vid
   }
 }
 

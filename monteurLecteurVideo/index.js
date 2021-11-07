@@ -7,22 +7,79 @@ const getBaseURL = () => {
 
 const template = document.createElement("template");
 template.innerHTML = /*html*/`
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />    <script src="./monteurLecteurVideo/index.js" type="module"></script>
+
 <style>
 #player {
-  height: 350px;
+  height: 500px;
+}
+#barre {
+  background-color:rgba(0, 0, 0, .5);
+  position:absolute;
+  height:35px;
+  bottom: 0;
+  opacity:0;
+  display: flex;
+  align-items: center;
+  transition: opacity cubic-bezier(0.4, 0, 1, 1) .3s;
+}
+#barre > button {
+  display: block;
+}
+#over {
+  width: fit-content;
+  position: relative;
+  margin: 25px;
+}
+#over:hover > #barre {
+  opacity:1;
+}
+#ecran {
+  margin-left:auto;
+  margin-right: 5px;
+}
+#infos {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+i {
+  color:white;
+}
+button {
+  all:unset;
+  padding: 0 8px;
+  cursor: pointer;
+  color:white;
+  font-weight:bold;
+  font-family: Arial;
+  font-size:20px;
+}
+#play{
+  font-size:18px;
+}
+#vol {
+  font-size:25px;
+  margin-left:5px;
+  width:30px;
 }
 </style>
 
-<video id="player"><br></video>
-<button id="play" onclick="play()">PLAY</button>
-<button id="pause" onclick="pause()">PAUSE</button>
-<button id="sec" onclick="avance10s()">+10s</button>
-<button id="vite" onclick="vitesse4x()">Vitesse 4x</button>
-<button id="infos" onclick="getInfo()">Informations</button> 
-<button id="ecran" onclick="pleinEcran()">Mettre en plein écran</button>
-<button id="precedente" onclick="changerVideo()">Vidéo precedente</button>
-<button id="suivante" onclick="changerVideo()">Vidéo suivante</button>
-<webaudio-slider tracking="rel" id="volume" min=0 max=1 value=0.5 step="0.1"></webaudio-slider>
+<div id="over">
+  <video id="player"><br></video>
+  <div id="barre">
+    <button id="precedente" onclick="changerVideo()"><i class="fas fa-step-backward"></i></button>
+    <button id="play" onclick="play()"><i class="fas fa-play"></i></button>
+    <button id="pause" onclick="pause()"><i class="fas fa-pause"></i></button>
+    <button id="suivante" onclick="changerVideo()"><i class="fas fa-step-forward"></i></button>
+    <i id="vol" class="fas fa-volume-up"></i>
+    <webaudio-slider id="volume" height=17 width=70 tracking="rel" min=0 max=1 value=0.85 step="0.1"></webaudio-slider>
+    <button id="sec" onclick="avance10s()">+10s</button>
+    <button id="vite" onclick="vitesse4x()">x4</button>
+    <button id="ecran" onclick="pleinEcran()"><i class="fas fa-expand"></i></button>
+  </div>
+  <button id="infos" onclick="getInfo()"><i class="fas fa-info-circle"></i></button> 
+</div>
 `;
 // <webaudio-knob diameter=50 id="volume" min=0 max=1 value=0.5 step="0.1" tooltip="%s" src="./assets/SimpleFlat3.png"></webaudio-knob>
 // <webaudio-knob diameter=40 id="volume" min=0 max=1 value=0.5 step="0.1" tooltip="%s" src="./assets/SimpleFlat3.png"></webaudio-knob>
@@ -41,15 +98,17 @@ class MyVideoPlayer extends HTMLElement {
     this.shadowRoot.appendChild(template.content.cloneNode(true)); // appel au template
     // ecouteurs sur les boutons
     this.player = this.shadowRoot.querySelector("#player");
+    // this.player.crossOrigin = "anonymous";
     // Recuperation des attributs
     this.src = this.getAttribute("src");
     this.player.src = this.src;
     // fonctions pour les boutons
     this.definitEcouteurs();
-
+    this.dimensionVideo(this.player);
     this.fixRelativeURLS();
   }
 
+  // Pour jouer avec la video 
   definitEcouteurs() {
     // Lancer la vidéo
     this.shadowRoot.querySelector("#play").onclick = () => {
@@ -96,9 +155,15 @@ class MyVideoPlayer extends HTMLElement {
     this.shadowRoot.querySelector("#volume").oninput = (event) => {
       const vol = parseFloat(event.target.value);
       this.player.volume = vol;
+      let icon = this.shadowRoot.querySelector("#vol");
+      let iconName;
+      if(vol==0) iconName='fas fa-volume-off'
+      else if(vol<0.8) iconName='fas fa-volume-down'
+      else iconName='fas fa-volume-up'
+      icon.className = iconName
     }
   }
-
+ 
   fixRelativeURLS() {
     // pour les knobs
     let knobs = this.shadowRoot.querySelectorAll('webaudio-knob');
@@ -114,12 +179,18 @@ class MyVideoPlayer extends HTMLElement {
     this.player.src = videos[this.cpt];
   }
 
-  videoPrecedente(videos){
+  videoPrecedente(videos) {
     this.cpt--;
-      if (this.cpt < 0) { this.cpt = videos.length - 1 }
-      this.player.src = videos[this.cpt];
+    if (this.cpt < 0) { this.cpt = videos.length - 1 }
+    this.player.src = videos[this.cpt];
   }
 
+  dimensionVideo(v) {
+    v.addEventListener("loadedmetadata", () => {
+      const barre = this.shadowRoot.querySelector('#barre')
+      barre.style.width = v.getBoundingClientRect().width + 'px'
+    }, false);
+  }
 }
 
 customElements.define("my-player", MyVideoPlayer);

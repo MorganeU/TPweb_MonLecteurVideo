@@ -287,10 +287,6 @@ class MyVideoPlayer extends HTMLElement {
     console.log(this.shadowRoot.querySelector("#autreVideo1"))
     for (let i = 0; i < num.length; i++) {
       console.log(num[i])
-      this.shadowRoot.querySelector("#autreVideo" + num[i]).onclick = () => {
-        this.player.src = this.video[num];
-        console.log("click")
-      }
     }
   }
 
@@ -345,13 +341,26 @@ class MyVideoPlayer extends HTMLElement {
 
   autresVideos() {
     let vid = [];
+    let n=0;
     for (let i = 0; i < this.videos.length; i++) {
       if (this.player.src != this.videos[i]) {
         this.shadowRoot.querySelector("#liste").innerHTML += '<video id=autreVideo' + i + ' src="' + this.videos[i] + '"></video>';
         this.shadowRoot.querySelector("#autreVideo" + i).style.width = 200 + 'px';
         // this.shadowRoot.querySelector("#autreVideo"+i).style.heigth=50+'px';
         this.shadowRoot.querySelector("#autreVideo" + i).style.marginBottom = 8 + 'px';
+
+        this.shadowRoot.querySelector("#listeVideos").innerHTML += '<button id=button' + i +'><i class="fas fa-play"></i></button>';
+        this.shadowRoot.querySelector("#button" + i).style.bottom=135+n+ 'px';
+        this.shadowRoot.querySelector("#button" + i).style.left=90+ 'px';
+        this.shadowRoot.querySelector("#button" + i).style.position="absolute";
+
+        n=-115
         vid.push(i);
+
+        this.shadowRoot.querySelector("#button" + i).onclick = () => {
+          this.player.src = this.video[i];
+          console.log("click")
+        }
       }
     }
     return vid
